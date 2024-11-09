@@ -1,0 +1,48 @@
+/* Empleados.css */
+
+/* Contenedor de las cards */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  
+  /* Estilo para cada card */
+  .venta-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 350px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+  
+  .venta-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  /* Estilo para el título */
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  /* Estilo para el subtítulo */
+  .text-muted {
+    color: #6c757d;
+    margin-bottom: 10px;
+  }
+  
+  /* Estilo para el texto de la card */
+  .card-text {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  /* Botones dentro de cada card */
+  .card-body button {
+    margin-right: 10px;
+  }
+  

@@ -1,25 +1,56 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Login from './componentes/login/Login';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Home from './componentes/Home';
+import Clientes from './componentes/clientes/Clientes';
+import Productos from './componentes/producto/Productos';
+import AgregarProducto from './componentes/producto/AgregarProducto';
+import Empleados from './componentes/users/Empleados';
+import Ventas from './componentes/ventas/Ventas';
 
-function App() {
+const App = () => {
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/home"
+          element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/clientes"
+          element={isAuthenticated ? <Clientes /> : <Navigate to="/login" />}
+        />
+        <Route path="*" element={<Navigate to="/login" />} />
+
+        <Route
+          path="/products"
+          element={isAuthenticated ? <Productos /> : <Navigate to="/login" />}
+        />
+
+        <Route path='/users' element={isAuthenticated ? <Empleados/> : <Navigate to="/login"></Navigate>} >
+
+        </Route>
+        
+        <Route path='/ventas' element={isAuthenticated ? <Ventas/> : <Navigate to="/login"></Navigate>} >
+
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" />} />
+        <Route
+          path="/addproduct"
+          element={isAuthenticated ? <AgregarProducto /> : <Navigate to="/login" />}
+        />
+        <Route path="*" element={<Navigate to="/login" />} />
+        
+      </Routes>
+      
+    </Router>
   );
-}
+};
 
 export default App;

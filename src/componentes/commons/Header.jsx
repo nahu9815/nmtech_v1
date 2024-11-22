@@ -9,7 +9,7 @@ import './Header.css'; // Archivo CSS adicional para un estilo mejorado
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
+//  const user = useSelector((state) => state.auth.user);
 
   const handleLogout = () => {
     dispatch(logout());

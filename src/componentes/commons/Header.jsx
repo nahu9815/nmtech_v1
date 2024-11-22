@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navbar, Nav, NavDropdown, Container } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { logout } from '../../features/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { FaCogs } from 'react-icons/fa';

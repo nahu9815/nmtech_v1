@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
+import BaseUrl from '../BaseUrl';
 
 const initialState = {
   user: JSON.parse(localStorage.getItem('user')) || null, // Recuperar del localStorage
@@ -16,7 +17,7 @@ export const authSlice = createSlice({
       state.isAuthenticated = true;
       state.error = null;
       localStorage.setItem('user', JSON.stringify(action.payload)); // Guardar en localStorage
-      localStorage.setItem('isAuthenticated', true); // Persistir autenticación
+      localStorage.setItem('isAuthenticated', 'true'); // Persistir autenticación
     },
     loginFailure: (state, action) => {
       state.error = action.payload;
@@ -35,11 +36,13 @@ export const { loginSuccess, loginFailure, logout } = authSlice.actions;
 
 export const login = (credentials) => async (dispatch) => {
   try {
-    const response = await axios.post('http://192.168.0.102:8080/login', credentials);
+    const response = await axios.post(BaseUrl.API_URL_REST+'/login', credentials);
     dispatch(loginSuccess(response.data));
-    console.log(response.data)
+    console.log(response.data);
   } catch (error) {
-    dispatch(loginFailure(error.response.data.message));
+    // Maneja correctamente el error, verificando si existe `error.response`
+    const errorMessage = error.response?.data?.message || 'Error desconocido. Por favor, inténtelo de nuevo.';
+    dispatch(loginFailure(errorMessage));
   }
 };
 

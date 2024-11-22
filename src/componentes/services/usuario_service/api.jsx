@@ -26,12 +26,15 @@ export const addUsuario = async (usuario) => {
 // Servicio para actualizar un usuario
 export const updateUsuario = async (id, usuario) => {
   try {
-    await axios.put(`${API_URL}/usuarios/${id}`, usuario);
+    await axios.put(`${API_URL}/usuarios/${id}`, usuario, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error("Error updating user:", error);
   }
 };
-
 // Servicio para eliminar un usuario
 export const deleteUsuario = async (id) => {
   try {

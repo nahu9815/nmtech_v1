@@ -14,6 +14,20 @@ export const getProductos = async () => {
   }
 };
 
+
+// Subir imagen
+export const uploadImage = async (formData) => {
+  try {
+    const response = await axios.post(`${API_URL}/productos/uploadImage`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+};
+
 export const getProductosBySearch = async (searchTerm = '') => {
     try {
       const response = await axios.get(`${API_URL}/productos/buscar`, {

@@ -1,0 +1,50 @@
+/* Header.css - Estilos personalizados para el Navbar */
+.custom-navbar {
+    background-color: #1a1a1d; /* Fondo oscuro elegante */
+    padding: 0.8rem 1rem; /* Ajuste de espacio para una apariencia compacta */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+  }
+  
+  .brand-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ffffff; /* Texto blanco */
+  }
+  
+  .brand-logo img {
+    margin-right: 10px;
+  }
+  
+  .nav-link {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ffffff;
+    transition: color 0.3s;
+  }
+  
+  .nav-link:hover {
+    color: #17a2b8; /* Azul claro al pasar el mouse */
+  }
+  
+  .settings-icon {
+    color: #ffffff;
+    transition: color 0.3s;
+  }
+  
+  .settings-icon:hover {
+    color: #17a2b8; /* Azul claro al pasar el mouse */
+  }
+  
+  .navbar-toggler {
+    border-color: #17a2b8; /* Color del borde del toggler */
+  }
+  
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%28155, 155, 155, 1%29' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+  }
+  
+  .nav-dropdown-menu {
+    background-color: #333333;
+    border: none;
+  }
+  

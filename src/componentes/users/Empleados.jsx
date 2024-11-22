@@ -6,7 +6,9 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
+import Alert from 'react-bootstrap/Alert'; // Importa Alert de Bootstrap
 import './Empleados.css'; // Archivo CSS para estilos personalizados de las cards
+import { useSelector } from 'react-redux';
 
 const Empleados = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -20,6 +22,8 @@ const Empleados = () => {
     rol: 'ADMIN',
     fechaCreacion: '',
   });
+  const [alertMessage, setAlertMessage] = useState(''); // Estado para el mensaje de alerta
+  const user = useSelector((state) => state.auth.user); // Obtener el usuario actual desde el estado de Redux
 
   useEffect(() => {
     const fetchUsuarios = async () => {
@@ -31,6 +35,10 @@ const Empleados = () => {
   }, []);
 
   const handleShowModal = (usuario = null) => {
+    if (user.rol === 'VENDEDOR') {
+      setAlertMessage('No tienes permisos para realizar esta acción.');
+      return;
+    }
     if (usuario) {
       setModalData(usuario);
     } else {
@@ -66,6 +74,12 @@ const Empleados = () => {
   };
 
   const handleDelete = async (idUsuario) => {
+    console.log(user.rol)
+    if (user.rol === 'VENDEDOR') {
+      setAlertMessage('No tienes permisos para realizar esta acción.');
+      return;
+    }
+
     const result = await Swal.fire({
       title: '¿Estás seguro?',
       text: '¡No podrás revertir esto!',
@@ -88,7 +102,18 @@ const Empleados = () => {
       <Header />
       <div className="container mt-5">
         <h2>Lista de Empleados</h2>
-        <Button className="mb-3" onClick={() => handleShowModal()}>Agregar Nuevo Usuario</Button>
+        {alertMessage && (
+          <Alert variant="danger" onClose={() => setAlertMessage('')} dismissible>
+            {alertMessage}
+          </Alert>
+        )}
+        <Button
+          className="mb-3"
+          onClick={() => handleShowModal()}
+          disabled={user.rol === 'VENDEDOR'} // Deshabilitar el botón si el usuario es VENDEDOR
+        >
+          Agregar Nuevo Usuario
+        </Button>
 
         {/* Lista de Cards */}
         <div className="card-container">
@@ -101,8 +126,20 @@ const Empleados = () => {
                   <strong>Email:</strong> {usuario.email} <br />
                   <strong>Fecha de Creación:</strong> {new Date(usuario.fechaCreacion).toLocaleDateString()}
                 </Card.Text>
-                <Button variant="warning" onClick={() => handleShowModal(usuario)}>Editar</Button>{' '}
-                <Button variant="danger" onClick={() => handleDelete(usuario.idUsuario)}>Eliminar</Button>
+                <Button
+                  variant="warning"
+                  onClick={() => handleShowModal(usuario)}
+                  disabled={user.rol === 'VENDEDOR'} // Deshabilitar el botón si el usuario es VENDEDOR
+                >
+                  Editar
+                </Button>{' '}
+                <Button
+                  variant="danger"
+                  onClick={() => handleDelete(usuario.idUsuario)}
+                  disabled={user.rol === 'VENDEDOR'} // Deshabilitar el botón si el usuario es VENDEDOR
+                >
+                  Eliminar
+                </Button>
               </Card.Body>
             </Card>
           ))}
@@ -123,7 +160,7 @@ const Empleados = () => {
                   onChange={(e) => setModalData({ ...modalData, nombre: e.target.value })}
                 />
               </Form.Group>
-              <Form.Group controlId="apellido">
+              <Form.Group controlId="apellido" className="mt-3">
                 <Form.Label>Apellido</Form.Label>
                 <Form.Control
                   type="text"
@@ -131,7 +168,7 @@ const Empleados = () => {
                   onChange={(e) => setModalData({ ...modalData, apellido: e.target.value })}
                 />
               </Form.Group>
-              <Form.Group controlId="email">
+              <Form.Group controlId="email" className="mt-3">
                 <Form.Label>Email</Form.Label>
                 <Form.Control
                   type="email"
@@ -139,7 +176,7 @@ const Empleados = () => {
                   onChange={(e) => setModalData({ ...modalData, email: e.target.value })}
                 />
               </Form.Group>
-              <Form.Group controlId="password">
+              <Form.Group controlId="password" className="mt-3">
                 <Form.Label>Password</Form.Label>
                 <Form.Control
                   type="password"
@@ -147,7 +184,7 @@ const Empleados = () => {
                   onChange={(e) => setModalData({ ...modalData, password: e.target.value })}
                 />
               </Form.Group>
-              <Form.Group controlId="rol">
+              <Form.Group controlId="rol" className="mt-3">
                 <Form.Label>Rol</Form.Label>
                 <Form.Control
                   as="select"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { getClientes } from '../services/cliente_service/api';
 import { getProductos } from '../services/producto_service/api';
-import { getVentas, addVenta, deleteVenta } from '../services/venta_service/api'; // Importar deleteVenta
+import { getVentas, addVenta, deleteVenta } from '../services/venta_service/api';
 import Header from '../commons/Header';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -10,8 +10,8 @@ import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import Table from 'react-bootstrap/Table';
 import Swal from 'sweetalert2';
-import jsPDF from 'jspdf'; // Importar jsPDF para generar PDFs
-import 'jspdf-autotable'; // Importar plugin para tablas
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import './Ventas.css';
 
 const Ventas = () => {
@@ -25,7 +25,8 @@ const Ventas = () => {
   const [cantidad, setCantidad] = useState(1);
   const [lineasVenta, setLineasVenta] = useState([]);
   const [total, setTotal] = useState(0);
-  const [selectedVenta, setSelectedVenta] = useState(null); // Estado para la venta seleccionada
+  const [selectedVenta, setSelectedVenta] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const user = useSelector((state) => state.auth.user);
 
@@ -48,12 +49,18 @@ const Ventas = () => {
     }
 
     const producto = productos.find(prod => prod.idProducto === parseInt(selectedProducto));
+    if (!producto) {
+      Swal.fire('Error', 'El producto seleccionado no es válido.', 'error');
+      return;
+    }
+
     const subtotal = producto.precio * cantidad;
     const newLinea = {
       idProducto: producto.idProducto,
       cantidad,
       precioUnitario: producto.precio,
-      subtotal
+      subtotal,
+      producto
     };
 
     setLineasVenta([...lineasVenta, newLinea]);
@@ -81,7 +88,7 @@ const Ventas = () => {
       fechaVenta: new Date().toISOString(),
       total,
       lineasVenta: lineasVenta.map(linea => ({
-        producto: { idProducto: linea.idProducto },
+        producto: { idProducto: linea.producto.idProducto },
         cantidad: linea.cantidad,
         precioUnitario: linea.precioUnitario,
         subtotal: linea.subtotal
@@ -89,16 +96,28 @@ const Ventas = () => {
     };
 
     try {
-      await addVenta(nuevaVenta);
-      Swal.fire('Éxito', 'Venta registrada correctamente.', 'success');
-      setShowModal(false);
-      setSelectedCliente('');
-      setLineasVenta([]);
-      setTotal(0);
-      const ventasData = await getVentas();
-      setVentas(ventasData);
+      const response = await addVenta(nuevaVenta);
+      if (response && response.status >= 200 && response.status < 300) {
+        Swal.fire('Éxito', 'Venta registrada correctamente.', 'success');
+        setShowModal(false);
+        setSelectedCliente('');
+        setLineasVenta([]);
+        setTotal(0);
+        const ventasData = await getVentas();
+        setVentas(ventasData);
+      } else {
+        Swal.fire('Error', 'Hubo un problema al registrar la venta.', 'error');
+      }
     } catch (error) {
-      Swal.fire('Error', 'Hubo un problema al registrar la venta.', 'error');
+      if (error.response && error.response.status === 500) {
+        if (error.response.data.message && error.response.data.message.includes("Stock insuficiente para el producto")) {
+          Swal.fire('Error', error.response.data.message, 'error');
+        } else {
+          Swal.fire('Error', 'Hubo un problema al registrar la venta.', 'error');
+        }
+      } else {
+        Swal.fire('Error', 'Hubo un problema al registrar la venta.', 'error');
+      }
     }
   };
 
@@ -141,15 +160,21 @@ const Ventas = () => {
     doc.save(`venta_${venta.idVenta}.pdf`);
   };
 
+  const filteredProductos = productos.filter(prod =>
+    prod.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    prod.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    prod.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    prod.categoria?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div>
+    <div className="ventas-container">
       <Header />
       <div className="container mt-5">
         <h2>Registrar Nueva Venta</h2>
         <Button className="mb-3" onClick={() => setShowModal(true)}>Crear Nueva Venta</Button>
 
-        {/* Modal para crear una nueva venta */}
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Crear Nueva Venta</Modal.Title>
           </Modal.Header>
@@ -170,7 +195,16 @@ const Ventas = () => {
                   ))}
                 </Form.Control>
               </Form.Group>
-              <Form.Group controlId="productoSelect">
+              <Form.Group controlId="searchInput" className="mt-3">
+                <Form.Label>Buscar Producto</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Buscar por nombre, descripción, código o categoría"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </Form.Group>
+              <Form.Group controlId="productoSelect" className="mt-3">
                 <Form.Label>Producto</Form.Label>
                 <Form.Control
                   as="select"
@@ -178,14 +212,14 @@ const Ventas = () => {
                   onChange={(e) => setSelectedProducto(e.target.value)}
                 >
                   <option value="">Seleccione un producto</option>
-                  {productos.map(producto => (
+                  {filteredProductos.map(producto => (
                     <option key={producto.idProducto} value={producto.idProducto}>
-                      {producto.nombre} - ${producto.precio}
+                      {producto.nombre} - ${producto.precio} ({producto.categoria?.nombre || 'Sin Categoría'})
                     </option>
                   ))}
                 </Form.Control>
               </Form.Group>
-              <Form.Group controlId="cantidadInput">
+              <Form.Group controlId="cantidadInput" className="mt-3">
                 <Form.Label>Cantidad</Form.Label>
                 <Form.Control
                   type="number"
@@ -199,32 +233,34 @@ const Ventas = () => {
               </Button>
 
               <h5 className="mt-4">Productos Agregados</h5>
-              <Table striped bordered hover>
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unitario</th>
-                    <th>Subtotal</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineasVenta.map((linea, index) => (
-                    <tr key={index}>
-                      <td>{productos.find(p => p.idProducto === linea.idProducto)?.nombre}</td>
-                      <td>{linea.cantidad}</td>
-                      <td>${linea.precioUnitario}</td>
-                      <td>${linea.subtotal}</td>
-                      <td>
-                        <Button variant="danger" onClick={() => handleRemoveProducto(index)}>
-                          Quitar
-                        </Button>
-                      </td>
+              <div className="table-container" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unitario</th>
+                      <th>Subtotal</th>
+                      <th>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
+                  </thead>
+                  <tbody>
+                    {lineasVenta.map((linea, index) => (
+                      <tr key={index}>
+                        <td>{linea.producto.nombre}</td>
+                        <td>{linea.cantidad}</td>
+                        <td>${linea.precioUnitario}</td>
+                        <td>${linea.subtotal}</td>
+                        <td>
+                          <Button variant="danger" onClick={() => handleRemoveProducto(index)}>
+                            Quitar
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
               <h5>Total: ${total.toFixed(2)}</h5>
             </Form>
           </Modal.Body>
@@ -234,7 +270,6 @@ const Ventas = () => {
           </Modal.Footer>
         </Modal>
 
-        {/* Modal para ver detalles de una venta */}
         <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Detalle de la Venta #{selectedVenta?.idVenta}</Modal.Title>
@@ -275,24 +310,26 @@ const Ventas = () => {
           </Modal.Footer>
         </Modal>
 
-        {/* Listado de las últimas ventas */}
         <h3 className="mt-5">Últimas Ventas</h3>
-        <div className="ventas-cards">
+        <div className="ventas-cards row justify-content-center">
           {ventas.map(venta => (
-            <Card key={venta.idVenta} className="venta-card">
-              <Card.Body>
-                <Card.Title>Venta #{venta.idVenta}</Card.Title>
-                <Card.Text>
-                  <strong>Cliente:</strong> {venta.cliente.nombre} {venta.cliente.apellido} <br />
-                  <strong>Vendedor:</strong> {venta.usuario.nombre} {venta.usuario.apellido} <br />
-                  <strong>Total:</strong> ${venta.total}
-                </Card.Text>
-                <Button variant="info" onClick={() => handleShowDetail(venta)}>Ver Detalle</Button>
-                <Button variant="danger" className="ml-2" onClick={() => handleDeleteVenta(venta.idVenta)}>Eliminar</Button>
-              </Card.Body>
-            </Card>
+            <div key={venta.idVenta} className="col-12 col-sm-6 col-md-4 d-flex justify-content-center mb-3">
+              <Card className="venta-card" style={{ width: '18rem' }}>
+                <Card.Body>
+                  <Card.Title>Venta #{venta.idVenta}</Card.Title>
+                  <Card.Text>
+                    <strong>Cliente:</strong> {venta.cliente.nombre} {venta.cliente.apellido} <br />
+                    <strong>Vendedor:</strong> {venta.usuario.nombre} {venta.usuario.apellido} <br />
+                    <strong>Total:</strong> ${venta.total}
+                  </Card.Text>
+                  <Button variant="info" onClick={() => handleShowDetail(venta)}>Ver Detalle</Button>
+                  <Button variant="danger" className="ml-2" onClick={() => handleDeleteVenta(venta.idVenta)}>Eliminar</Button>
+                </Card.Body>
+              </Card>
+            </div>
           ))}
         </div>
+
       </div>
     </div>
   );

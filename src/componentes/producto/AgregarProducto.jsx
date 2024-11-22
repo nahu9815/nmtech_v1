@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Swal from 'sweetalert2';
-import { useNavigate } from 'react-router-dom'; // Para redirigir después de guardar
+import { useNavigate } from 'react-router-dom';
 import { getCategorias } from '../services/categoria_service/api';
-import { createProducto } from '../services/producto_service/api';
+import { createProducto, uploadImage } from '../services/producto_service/api'; // Importar el nuevo servicio
 import Header from '../commons/Header';
+import Swal from 'sweetalert2';
 
 const AgregarProducto = () => {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
   const [stock, setStock] = useState('');
-  const [imagenUrl, setImagenUrl] = useState('');
   const [imagenFile, setImagenFile] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [categoriaId, setCategoriaId] = useState('');
-  const navigate = useNavigate(); // Para redirigir
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCategorias();
@@ -28,58 +26,60 @@ const AgregarProducto = () => {
 
   const handleFileChange = (e) => {
     setImagenFile(e.target.files[0]);
-    setImagenUrl(''); // Limpiar la URL si se elige un archivo local
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let imageName = '';
+    let imageUrl = '';
 
     if (imagenFile) {
-      // Si se seleccionó un archivo local, subirlo al backend
       const formData = new FormData();
       formData.append('file', imagenFile);
 
       try {
-        const response = await axios.post('http://localhost:8080/productos/uploadImage', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        imageName = response.data; // Nombre de la imagen subida
+        const response = await uploadImage(formData); // Subir la imagen
+        imageUrl = response.data; // URL de la imagen devuelta por el backend
       } catch (error) {
         console.error('Error al subir la imagen:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Hubo un problema al subir la imagen.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar',
+        });
         return;
       }
-    } else if (imagenUrl) {
-      // Si es una URL de imagen, la usamos directamente
-      imageName = imagenUrl;
     }
 
-    // Preparar los datos del producto
     const productoData = {
       nombre,
       descripcion,
       precio: parseFloat(precio),
       stock: parseInt(stock),
-      imagen: imageName, // Guardamos el nombre del archivo o la URL
+      imagen: imageUrl, // Guardar la URL de la imagen en lugar de los bytes
       idCategoria: categoriaId,
     };
 
-    // Llamar al servicio para crear el producto
-    await createProducto(productoData);
-
-    // Mostrar alerta de éxito con SweetAlert
-    Swal.fire({
-      title: 'Producto agregado',
-      text: 'El producto ha sido agregado con éxito.',
-      icon: 'success',
-      confirmButtonText: 'Aceptar',
-    }).then(() => {
-      // Redirigir a la lista de productos
-      navigate('/products');
-    });
+    try {
+      await createProducto(productoData);
+      Swal.fire({
+        title: 'Producto agregado',
+        text: 'El producto ha sido agregado con éxito.',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+      }).then(() => {
+        navigate('/products');
+      });
+    } catch (error) {
+      console.error('Error al agregar el producto:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Hubo un problema al agregar el producto.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+    }
   };
 
   return (
@@ -158,27 +158,13 @@ const AgregarProducto = () => {
           </div>
 
           <div className="form-group mt-3">
-            <label htmlFor="imagen">Subir Imagen del Producto</label>
+            <label htmlFor="imagen">Subir Imagen del Producto (opcional)</label>
             <input
               type="file"
               className="form-control"
               id="imagen"
               accept="image/*"
               onChange={handleFileChange}
-            />
-          </div>
-
-          <div className="form-group mt-3">
-            <label htmlFor="imagenUrl">O ingresar URL de la Imagen</label>
-            <input
-              type="text"
-              className="form-control"
-              id="imagenUrl"
-              value={imagenUrl}
-              onChange={(e) => {
-                setImagenUrl(e.target.value);
-                setImagenFile(null); // Limpiar archivo si se selecciona URL
-              }}
             />
           </div>
 
